@@ -14,6 +14,8 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import openpyxl
 from datetime import datetime
+import re
+import requests
 
 
 #########################
@@ -118,7 +120,27 @@ def parseInfoPoste(mon_url):
 
     return data
 
-
+def ParseReview(url):
+    id_comp = re.findall(r'-(\d+)/',url)[0] #reccuperation de l'id de l'entreprise dans le lien
+    url_api=f"https://api-seek.prod.companyreview.co/companies/{id_comp}/company-reviews?page=1&sort=&api_key=jwt_prodSeekAuBrowserKey" #lien API
+    try :
+        response = requests.get(url_api)
+        response_dict = response.json()
+        reviews = response_dict['data'] #json de l'api
+        pros=[dico["pros"] for dico in reviews]
+        cons=[dico["cons"] for dico in reviews]
+        job_title=[dico["job_title"] for dico in reviews]
+        created_at=[dico["created_at"] for dico in reviews]
+        company_name=[dico["company_name"] for dico in reviews]
+        company_id=[dico["company_id"] for dico in reviews]
+        work_location=[dico["work_location"] for dico in reviews]
+        rating=[dico["rating"]["company_overall"] for dico in reviews]
+        
+        data=[company_name,company_id,pros,cons,job_title,work_location,rating,created_at]
+        
+    except KeyError: 
+        pass
+    return data
 
 
 # Programme principal
@@ -133,13 +155,25 @@ if __name__ == '__main__':
     l_page_a_scraper = parseURLPage(url_site)
 
     l_lien_poste = []
-    for fin_url in l_page_a_scraper:
+    for fin_url in l_page_a_scraper[0:1]:
         l_lien_poste.extend(parseURLPoste(url+fin_url))
 
-    # liste de dictionnaire
+
     l_InfoPoste = []
+    l_Review = ["entreprise","entreprise_id","avantage","inconvenient","job","lieu","note","date" ]
+    review=pd.DataFrame(l_Review).T
+    
     for fin_url_poste in l_lien_poste:
-        l_InfoPoste.append(parseInfoPoste(url+fin_url_poste))
+        info=parseInfoPoste(url+fin_url_poste)
+        #l_InfoPoste.append(a)
+        if info["review"]!=None:
+            ajout=pd.DataFrame(ParseReview(info['review'])).T
+            review=pd.concat([review,ajout], axis=0)
+    
+    date = datetime.today().strftime('%Y%m%d')
+    #review=review.drop(0)
+    review.to_excel(f"{date}_review.xlsx", index=False)
+
 
     # transformation en dataframe
     df = pd.DataFrame(l_InfoPoste)
@@ -173,37 +207,3 @@ if __name__ == '__main__':
 # !!!!!!!!!! le lien pour chaque page est le même ....
 # !!!!!!!!!! idee : peut être récupérer le nombre de page et faire du selenium en parallèle pour changer de page ?? je ne sais pas si ca marchera ...
 #  pour chaque commentaire récupérer la date + la note + le commentaire ==> sauvegarder les résultats sous forme de dictionnaire comme plus haut
-
-
-# url_review = "https://www.seek.com.au/companies/australiansuper-813334/reviews?jobId=70983981"
-
-
-# # ne marche pas
-# def parseURLReviewnbrePage(mon_url):
-#     # Ouvrir avec openurl mon_url
-#     user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML,like Gecko) Chrome/35.0.1916.47 Safari/537.36'
-#     req = Request(mon_url,headers={'User-Agent':user_agent})
-#     try: # gestion des exceptions avec un bloc try/except
-#         html = urlopen(req)
-#     except (HTTPError, URLError) as e:
-#         sys.exit(e) # sortie du programme avec affichage de l’erreur
-#     bsObj = BeautifulSoup(html, "lxml") # en utilisant le parser de lxml
-
-#     page = bsObj.find("nav",class_="ipcm5y0 ipcm5y1")#.find_all("span",class_="ipcm5y0 _2q2j1u8 _2q2j1u4")[1:].get_text()
-#     return page
-
-# # à faire
-# def parseInfoReview(mon_url):
-#     # Ouvrir avec openurl mon_url
-#     user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML,like Gecko) Chrome/35.0.1916.47 Safari/537.36'
-#     req = Request(mon_url,headers={'User-Agent':user_agent})
-#     try: # gestion des exceptions avec un bloc try/except
-#         html = urlopen(req)
-#     except (HTTPError, URLError) as e:
-#         sys.exit(e) # sortie du programme avec affichage de l’erreur
-
-#     bsObj = BeautifulSoup(html, "lxml") # en utilisant le parser de lxml
-
-#     return 
-
-# parseInfoReview(url_review)

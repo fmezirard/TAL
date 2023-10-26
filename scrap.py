@@ -36,19 +36,19 @@ url_api="https://api-seek.prod.companyreview.co/companies/813334/company-reviews
 #     return liste
 
 def scrap_review(url):
-
+    id_comp=
+    url_api=f"https://api-seek.prod.companyreview.co/companies/{id_comp}/company-reviews?page=1&sort=&api_key=jwt_prodSeekAuBrowserKey"
     response = requests.get(url)
     response_dict = response.json()
     liste=[]
     try :
         reviews = response_dict['data']
-        #for review in reviews:
-        #    liste.append(review["pros"])
+        pros=[dico["pros"] for dico in reviews]
 
     except KeyError: 
         pass
-    return reviews
+    return pros
 
 
+a=scrap_review(url_api)
 
-print(scrap_review(url_api))
