@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Feb 22 22:50:35 2022
+Created on Tue Oct 25 18:30:35 2023
 @author: Floriane Mézirard & Lucie Raimbault
 """
 
@@ -11,19 +11,13 @@ import sys
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 from bs4 import BeautifulSoup
-import pickle
-from multiprocessing import Pool, cpu_count
 import pandas as pd
 import openpyxl
+from datetime import datetime
 
-
-
-#########################
-# 1- Récupération des liens sur la page Web Seek -- moteur de recherche d'emploi en Australie
 
 #########################
 # Définition de fonction
-
 
 # Récupération des url pour scraper toutes les pages
 
@@ -85,6 +79,10 @@ def parseInfoPoste(mon_url):
     lieu = l_lieu_categorie_contrat[0]
     categorie = l_lieu_categorie_contrat[1]
     contrat = l_lieu_categorie_contrat[2]
+    try :
+        salaire = l_lieu_categorie_contrat[3]
+    except IndexError:
+        salaire = None
     parution = bsObj.find_all("span",class_="_1wkzzau0 a1msqi4y lnocuo0 lnocuo1 lnocuo22 _1d0g9qk4 lnocuoa")[-1].get_text()
     description = bsObj.find("div", class_="_1wkzzau0 _1pehz540").get_text()
 
@@ -95,6 +93,7 @@ def parseInfoPoste(mon_url):
         "lieu" : lieu,
         "categorie" : categorie,
         "contrat" : contrat,
+        "salaire" : salaire,
         "parution" : parution,
         "description" : description
     }
@@ -144,8 +143,8 @@ if __name__ == '__main__':
 
     # transformation en dataframe
     df = pd.DataFrame(l_InfoPoste)
-
-    df.to_excel("Donnees_Info_Poste.xlsx", index=False)
+    date = datetime.today().strftime('%Y%m%d')
+    df.to_excel(f"{date}-Donnees_Info_Poste.xlsx", index=False)
 
 
 
@@ -176,35 +175,35 @@ if __name__ == '__main__':
 #  pour chaque commentaire récupérer la date + la note + le commentaire ==> sauvegarder les résultats sous forme de dictionnaire comme plus haut
 
 
-url_review = "https://www.seek.com.au/companies/australiansuper-813334/reviews?jobId=70983981"
+# url_review = "https://www.seek.com.au/companies/australiansuper-813334/reviews?jobId=70983981"
 
 
-# ne marche pas
-def parseURLReviewnbrePage(mon_url):
-    # Ouvrir avec openurl mon_url
-    user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML,like Gecko) Chrome/35.0.1916.47 Safari/537.36'
-    req = Request(mon_url,headers={'User-Agent':user_agent})
-    try: # gestion des exceptions avec un bloc try/except
-        html = urlopen(req)
-    except (HTTPError, URLError) as e:
-        sys.exit(e) # sortie du programme avec affichage de l’erreur
-    bsObj = BeautifulSoup(html, "lxml") # en utilisant le parser de lxml
+# # ne marche pas
+# def parseURLReviewnbrePage(mon_url):
+#     # Ouvrir avec openurl mon_url
+#     user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML,like Gecko) Chrome/35.0.1916.47 Safari/537.36'
+#     req = Request(mon_url,headers={'User-Agent':user_agent})
+#     try: # gestion des exceptions avec un bloc try/except
+#         html = urlopen(req)
+#     except (HTTPError, URLError) as e:
+#         sys.exit(e) # sortie du programme avec affichage de l’erreur
+#     bsObj = BeautifulSoup(html, "lxml") # en utilisant le parser de lxml
 
-    page = bsObj.find("nav",class_="ipcm5y0 ipcm5y1")#.find_all("span",class_="ipcm5y0 _2q2j1u8 _2q2j1u4")[1:].get_text()
-    return page
+#     page = bsObj.find("nav",class_="ipcm5y0 ipcm5y1")#.find_all("span",class_="ipcm5y0 _2q2j1u8 _2q2j1u4")[1:].get_text()
+#     return page
 
-# à faire
-def parseInfoReview(mon_url):
-    # Ouvrir avec openurl mon_url
-    user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML,like Gecko) Chrome/35.0.1916.47 Safari/537.36'
-    req = Request(mon_url,headers={'User-Agent':user_agent})
-    try: # gestion des exceptions avec un bloc try/except
-        html = urlopen(req)
-    except (HTTPError, URLError) as e:
-        sys.exit(e) # sortie du programme avec affichage de l’erreur
+# # à faire
+# def parseInfoReview(mon_url):
+#     # Ouvrir avec openurl mon_url
+#     user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML,like Gecko) Chrome/35.0.1916.47 Safari/537.36'
+#     req = Request(mon_url,headers={'User-Agent':user_agent})
+#     try: # gestion des exceptions avec un bloc try/except
+#         html = urlopen(req)
+#     except (HTTPError, URLError) as e:
+#         sys.exit(e) # sortie du programme avec affichage de l’erreur
 
-    bsObj = BeautifulSoup(html, "lxml") # en utilisant le parser de lxml
+#     bsObj = BeautifulSoup(html, "lxml") # en utilisant le parser de lxml
 
-    return 
+#     return 
 
-parseInfoReview(url_review)
+# parseInfoReview(url_review)
