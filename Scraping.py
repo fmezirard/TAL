@@ -155,7 +155,7 @@ if __name__ == '__main__':
     l_page_a_scraper = parseURLPage(url_site)
 
     l_lien_poste = []
-    for fin_url in l_page_a_scraper[0:1]:
+    for fin_url in l_page_a_scraper:
         l_lien_poste.extend(parseURLPoste(url+fin_url))
 
 
