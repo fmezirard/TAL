@@ -89,7 +89,7 @@ def parseInfoPoste(mon_url):
     description = bsObj.find("div", class_="_1wkzzau0 _1pehz540").get_text()
 
     # Création d'un dictionnaire pour stocker les résultats
-    data = {
+    data_p = {
         "titre" : titre,
         "entreprise" : company,
         "lieu" : lieu,
@@ -105,7 +105,7 @@ def parseInfoPoste(mon_url):
     except AttributeError:
         note = None
     finally:
-        data["note"] = note
+        data_p["note"] = note
 
     try:
         lien_review = bsObj.find("div",class_="_1wkzzau0 a1msqigi a1msqi5a a1msqig2 a1msqifi szurmz2e szurmz2n").find_all("a")
@@ -116,12 +116,13 @@ def parseInfoPoste(mon_url):
     except AttributeError:
         review = None
     finally:
-        data["review"] = review
+        data_p["review"] = review
 
-    return data
+    return data_p
 
-def ParseReview(url):
-    id_comp = re.findall(r'-(\d+)/',url)[0] #reccuperation de l'id de l'entreprise dans le lien
+
+def parseReview(mon_url):
+    id_comp = re.findall(r'-(\d+)/',mon_url)[0] #reccuperation de l'id de l'entreprise dans le lien
     url_api=f"https://api-seek.prod.companyreview.co/companies/{id_comp}/company-reviews?page=1&sort=&api_key=jwt_prodSeekAuBrowserKey" #lien API
     try :
         response = requests.get(url_api)
@@ -136,11 +137,16 @@ def ParseReview(url):
         work_location=[dico["work_location"] for dico in reviews]
         rating=[dico["rating"]["company_overall"] for dico in reviews]
         
-        data=[company_name,company_id,pros,cons,job_title,work_location,rating,created_at]
+        data_r=[company_name,company_id,pros,cons,job_title,work_location,rating,created_at]
+        bd=pd.DataFrame(data_r).T
+
+        return bd
         
     except KeyError: 
         pass
-    return data
+    
+
+    
 
 
 # Programme principal
@@ -158,21 +164,20 @@ if __name__ == '__main__':
     for fin_url in l_page_a_scraper:
         l_lien_poste.extend(parseURLPoste(url+fin_url))
 
-
     l_InfoPoste = []
     l_Review = ["entreprise","entreprise_id","avantage","inconvenient","job","lieu","note","date" ]
-    review=pd.DataFrame(l_Review).T
     
+    df_review_global = pd.DataFrame()
     for fin_url_poste in l_lien_poste:
         info=parseInfoPoste(url+fin_url_poste)
-        #l_InfoPoste.append(a)
-        if info["review"]!=None:
-            ajout=pd.DataFrame(ParseReview(info['review'])).T
-            review=pd.concat([review,ajout], axis=0)
+        l_InfoPoste.append(info)
+        if info["review"] is not None:
+            df_review=parseReview(info["review"])
+            df_review_global=pd.concat([df_review_global,df_review], axis=0)
     
     date = datetime.today().strftime('%Y%m%d')
-    #review=review.drop(0)
-    review.to_excel(f"{date}_review.xlsx", index=False)
+    df_review_global.columns = l_Review
+    df_review_global.to_excel(f"{date}_review.xlsx", index=False)
 
 
     # transformation en dataframe
@@ -191,19 +196,3 @@ if __name__ == '__main__':
 # 59?type=standard', '/job/70954351?type=standout', '/job/70985060?type=standard', '/job/71000164?type=standout', '/job/70995657?type=standout', '/job/70927078?type=standard', '/job/71014942?type=standout', '/job/71025081?type=standout', '/job/71021412?type=standout', '/job/71024802?type=standout']
 #url_info_poste = "https://www.seek.com.au/job/70983981?type=standout#sol=51c658af5e39591eb59de73d370c2c993b9b72cd"
 #print(parseInfoPoste(url_info_poste))
-
-
-
-
-#########################
-#########################
-#########################    !!!!!!!!!   A FAIRE  !!!!!!!
-######################### 
-#########################
-# 3 - Si lien de review -- récupérer les commentaires et notes sur l'entreprise
-# analyses des pages de review -- exemple avec le liens ci-dessous
-# Idées --
-#  Faire comme plus haut récupérer le nombre de page (url) à scrapper 
-# !!!!!!!!!! le lien pour chaque page est le même ....
-# !!!!!!!!!! idee : peut être récupérer le nombre de page et faire du selenium en parallèle pour changer de page ?? je ne sais pas si ca marchera ...
-#  pour chaque commentaire récupérer la date + la note + le commentaire ==> sauvegarder les résultats sous forme de dictionnaire comme plus haut
