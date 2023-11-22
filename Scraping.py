@@ -120,6 +120,7 @@ def parseInfoPoste(mon_url):
 
     return data_p
 
+#Réccupération des avis des entreprises 
 
 def parseReview(mon_url):
     id_comp = re.findall(r'-(\d+)/',mon_url)[0] #reccuperation de l'id de l'entreprise dans le lien
@@ -146,8 +147,6 @@ def parseReview(mon_url):
         pass
     
 
-    
-
 
 # Programme principal
 if __name__ == '__main__':
@@ -171,8 +170,8 @@ if __name__ == '__main__':
     for fin_url_poste in l_lien_poste:
         info=parseInfoPoste(url+fin_url_poste)
         l_InfoPoste.append(info)
-        if info["review"] is not None:
-            df_review=parseReview(info["review"])
+        if info["review"] is not None: #si l'entreprise possède des avis 
+            df_review=parseReview(info["review"]) #réccupération des avis 
             df_review_global=pd.concat([df_review_global,df_review], axis=0)
     
     date = datetime.today().strftime('%Y%m%d')
@@ -184,15 +183,3 @@ if __name__ == '__main__':
     df = pd.DataFrame(l_InfoPoste)
     date = datetime.today().strftime('%Y%m%d')
     df.to_excel(f"{date}-Donnees_Info_Poste.xlsx", index=False)
-
-
-
-# Fonction 1
-# print(token)
-# ['/data-jobs', '/data-jobs?page=2', '/data-jobs?page=3', '/data-jobs?page=4', '/data-jobs?page=5', '/data-jobs?page=6', '/data-jobs?page=7']
-
-# Fonction 2
-# print(len(parseURLPoste("https://www.seek.com.au/data-jobs")))
-# 59?type=standard', '/job/70954351?type=standout', '/job/70985060?type=standard', '/job/71000164?type=standout', '/job/70995657?type=standout', '/job/70927078?type=standard', '/job/71014942?type=standout', '/job/71025081?type=standout', '/job/71021412?type=standout', '/job/71024802?type=standout']
-#url_info_poste = "https://www.seek.com.au/job/70983981?type=standout#sol=51c658af5e39591eb59de73d370c2c993b9b72cd"
-#print(parseInfoPoste(url_info_poste))
